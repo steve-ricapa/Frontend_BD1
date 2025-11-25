@@ -40,11 +40,11 @@ export default function PrestamosCliente() {
                             <div className="space-y-3">
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Monto Original</span>
-                                    <span className="font-bold">S/ {p.monto.toFixed(2)}</span>
+                                    <span className="font-bold">S/ {parseFloat(p.monto || 0).toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Saldo Pendiente</span>
-                                    <span className="font-bold text-interbank-blue">S/ {p.saldo_pendiente.toFixed(2)}</span>
+                                    <span className="font-bold text-interbank-blue">S/ {parseFloat(p.saldo_pendiente || 0).toFixed(2)}</span>
                                 </div>
 
                                 <div className="w-full bg-gray-200 rounded-full h-3 mt-4">

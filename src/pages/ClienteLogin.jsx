@@ -7,22 +7,22 @@ import { db } from '../lib/db';
 export default function ClienteLogin() {
     const [dni, setDni] = useState('');
     const [error, setError] = useState('');
-    const [sugerencia, setSugerencia] = useState('');
+    const [sugerencias, setSugerencias] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Fetch a real DNI for suggestion
-        const fetchSugerencia = async () => {
+        // Fetch multiple real DNIs for suggestions
+        const fetchSugerencias = async () => {
             try {
-                const res = await db.query('SELECT dni FROM cliente LIMIT 1');
+                const res = await db.query('SELECT dni, nombre FROM cliente LIMIT 5');
                 if (res.rows && res.rows.length > 0) {
-                    setSugerencia(res.rows[0].dni);
+                    setSugerencias(res.rows);
                 }
             } catch (err) {
-                console.error('Error fetching suggestion:', err);
+                console.error('Error fetching suggestions:', err);
             }
         };
-        fetchSugerencia();
+        fetchSugerencias();
     }, []);
 
     const handleLogin = async (e) => {
@@ -32,8 +32,6 @@ export default function ClienteLogin() {
         try {
             const res = await db.query('SELECT * FROM cliente WHERE dni = $1', [dni]);
             if (res.rows.length > 0) {
-                // Simulating session by passing ID in state or URL (for demo simplicity)
-                // In a real app, use Context or LocalStorage
                 const cliente = res.rows[0];
                 localStorage.setItem('cliente', JSON.stringify(cliente));
                 navigate('/cliente/portal');
@@ -76,16 +74,22 @@ export default function ClienteLogin() {
                             Ingresar
                         </button>
 
-                        {sugerencia && (
-                            <div className="text-center text-xs text-gray-500 mt-4">
-                                <span className="mr-1">¿Necesitas probar? Usa:</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setDni(sugerencia)}
-                                    className="text-interbank-blue font-bold hover:underline cursor-pointer"
-                                >
-                                    {sugerencia}
-                                </button>
+                        {sugerencias.length > 0 && (
+                            <div className="text-center text-xs text-gray-500 mt-4 space-y-1">
+                                <div className="font-semibold mb-2">DNIs de prueba:</div>
+                                <div className="flex flex-wrap gap-2 justify-center">
+                                    {sugerencias.map((cliente) => (
+                                        <button
+                                            key={cliente.dni}
+                                            type="button"
+                                            onClick={() => setDni(cliente.dni)}
+                                            className="px-3 py-1 bg-blue-50 text-interbank-blue font-medium rounded-full hover:bg-blue-100 transition-colors text-xs"
+                                            title={cliente.nombre}
+                                        >
+                                            {cliente.dni}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </form>

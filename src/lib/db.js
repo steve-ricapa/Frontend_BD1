@@ -21,8 +21,15 @@ const db = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: sql, params }),
             });
-            if (!response.ok) throw new Error('Network response was not ok');
-            return await response.json();
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                // Throw error with backend message
+                throw new Error(data.error || 'Error en la consulta');
+            }
+
+            return data;
         } catch (error) {
             console.error('API Error:', error);
             throw error;

@@ -42,7 +42,7 @@ export default function CuentasCliente() {
                                 </div>
                             </div>
                             <div className="text-3xl font-bold text-gray-900 mb-2">
-                                S/ {cta.saldo.toFixed(2)}
+                                S/ {parseFloat(cta.saldo || 0).toFixed(2)}
                             </div>
                             <div className="text-sm text-gray-400">Saldo Disponible</div>
                         </Card>

@@ -8,6 +8,7 @@ import { db } from '../lib/db';
 export default function ClientePortal() {
     const [cliente, setCliente] = useState(null);
     const [cuentas, setCuentas] = useState([]);
+    const [cuentasNumeros, setCuentasNumeros] = useState([]);
     const [transacciones, setTransacciones] = useState([]);
     const [prestamos, setPrestamos] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -34,13 +35,15 @@ export default function ClientePortal() {
             // 2. Sus cuentas
             const cuentasRes = await db.query('SELECT * FROM cuenta WHERE idcliente = $1', [cliente.idcliente]);
             setCuentas(cuentasRes.rows);
+            setCuentasNumeros(cuentasRes.rows.map(c => c.nrocuenta));
 
-            // 3. Sus transacciones
+            // 3. Sus transacciones (enviadas Y recibidas)
             const txRes = await db.query(`
-        SELECT t.*
+        SELECT DISTINCT t.*
         FROM transaccion t
-        JOIN cuenta ct ON t.nrocuenta_origen = ct.nrocuenta
-        WHERE idcliente = $1
+        LEFT JOIN cuenta ct_origen ON t.nrocuenta_origen = ct_origen.nrocuenta
+        LEFT JOIN cuenta ct_destino ON t.nrocuenta_destino = ct_destino.nrocuenta
+        WHERE ct_origen.idcliente = $1 OR ct_destino.idcliente = $1
         ORDER BY fecha DESC
         LIMIT 100
       `, [cliente.idcliente]);
@@ -55,6 +58,17 @@ export default function ClientePortal() {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Función para determinar si es entrada de dinero
+    const esEntrada = (tx) => {
+        if (tx.tipo === 'transferencia' && cuentasNumeros.includes(tx.nrocuenta_destino)) {
+            return true;
+        }
+        if (tx.tipo === 'deposito') {
+            return true;
+        }
+        return false;
     };
 
     if (!cliente) return null;
@@ -87,7 +101,7 @@ export default function ClientePortal() {
                                             <div className="text-sm text-gray-500">{cta.nrocuenta}</div>
                                         </div>
                                         <div className="text-xl font-bold text-interbank-blue">
-                                            S/ {cta.saldo.toFixed(2)}
+                                            S/ {parseFloat(cta.saldo || 0).toFixed(2)}
                                         </div>
                                     </div>
                                 ))}
@@ -97,18 +111,24 @@ export default function ClientePortal() {
                         {/* Transacciones Recientes */}
                         <Card>
                             <h2 className="text-xl font-bold text-gray-800 mb-4">Últimos Movimientos</h2>
-                            <Table headers={['Fecha', 'Descripción', 'Monto']}>
-                                {transacciones.slice(0, 5).map(tx => (
-                                    <tr key={tx.idtransaccion}>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{tx.fecha.substring(0, 10)}</td>
-                                        <td className="px-6 py-4 text-sm font-medium text-gray-800 capitalize">{tx.tipo} - {tx.canal}</td>
-                                        <td className={`px-6 py-4 text-sm font-bold ${tx.tipo === 'deposito' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {tx.tipo === 'deposito' ? '+' : '-'} S/ {tx.monto.toFixed(2)}
-                                        </td>
-                                    </tr>
-                                ))}
+                            <Table headers={['Fecha', 'Descripción', 'Destino', 'Monto']}>
+                                {transacciones.slice(0, 5).map(tx => {
+                                    const isIncoming = esEntrada(tx);
+                                    return (
+                                        <tr key={tx.idtransaccion}>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{tx.fecha ? new Date(tx.fecha).toLocaleDateString('es-PE') : '-'}</td>
+                                            <td className="px-6 py-4 text-sm font-medium text-gray-800 capitalize">{tx.tipo} - {tx.canal}</td>
+                                            <td className="px-6 py-4 text-xs text-gray-500">
+                                                {tx.tipo === 'transferencia' ? (tx.nrocuenta_destino || '-') : '-'}
+                                            </td>
+                                            <td className={`px-6 py-4 text-sm font-bold ${isIncoming ? 'text-green-600' : 'text-red-600'}`}>
+                                                {isIncoming ? '+' : '-'} S/ {parseFloat(tx.monto || 0).toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                                 {transacciones.length === 0 && (
-                                    <tr><td colSpan="3" className="text-center py-4 text-gray-500">Sin movimientos recientes</td></tr>
+                                    <tr><td colSpan="4" className="text-center py-4 text-gray-500">Sin movimientos recientes</td></tr>
                                 )}
                             </Table>
                             <div className="mt-4 text-center">
@@ -126,13 +146,13 @@ export default function ClientePortal() {
                                 <div key={p.idprestamo} className="mb-4 last:mb-0">
                                     <div className="flex justify-between text-sm mb-1">
                                         <span className="text-gray-600">Préstamo Personal</span>
-                                        <span className="font-bold text-gray-800">S/ {p.monto}</span>
+                                        <span className="font-bold text-gray-800">S/ {parseFloat(p.monto || 0).toFixed(2)}</span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                        <div className="bg-interbank-green h-2.5 rounded-full" style={{ width: `${(1 - p.saldo_pendiente / p.monto) * 100}%` }}></div>
+                                        <div className="bg-interbank-green h-2.5 rounded-full" style={{ width: `${(1 - parseFloat(p.saldo_pendiente || 0) / parseFloat(p.monto || 1)) * 100}%` }}></div>
                                     </div>
                                     <div className="text-xs text-right text-gray-500 mt-1">
-                                        Pendiente: S/ {p.saldo_pendiente}
+                                        Pendiente: S/ {parseFloat(p.saldo_pendiente || 0).toFixed(2)}
                                     </div>
                                 </div>
                             ))}
