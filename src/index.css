@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+@theme {
+  --color-interbank-blue: #0033A0;
+  --color-interbank-green: #7AC143;
+  --color-interbank-gray: #F4F7FB;
+}
