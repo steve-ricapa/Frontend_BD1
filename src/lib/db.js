@@ -29,6 +29,13 @@ const db = {
                 throw new Error(data.error || 'Error en la consulta');
             }
 
+            if (data.duration !== undefined) {
+                const event = new CustomEvent('query-completed', {
+                    detail: { duration: data.duration, timestamp: new Date().toISOString() }
+                });
+                window.dispatchEvent(event);
+            }
+
             return data;
         } catch (error) {
             console.error('API Error:', error);

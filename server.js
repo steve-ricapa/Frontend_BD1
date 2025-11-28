@@ -39,9 +39,11 @@ app.post('/api/query', async (req, res) => {
     console.log('[Params]:', params);
 
     try {
+        const start = performance.now();
         const result = await pool.query(text, params);
-        console.log('[Query Success] Rows returned:', result.rowCount);
-        res.json({ rows: result.rows, rowCount: result.rowCount });
+        const duration = performance.now() - start;
+        console.log('[Query Success] Rows returned:', result.rowCount, 'Duration:', duration.toFixed(2), 'ms');
+        res.json({ rows: result.rows, rowCount: result.rowCount, duration });
     } catch (err) {
         console.error('[Query Error]:', err.message);
         console.error('[Detail]:', err.detail || 'No additional details');

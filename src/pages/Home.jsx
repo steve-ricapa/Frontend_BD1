@@ -1,14 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Card from '../components/Card';
 
 export default function Home() {
+    const [isOptimized, setIsOptimized] = useState(() => {
+        return localStorage.getItem('useOptimized') === 'true';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('useOptimized', isOptimized);
+        // Dispatch event so other components can react immediately if needed (though they likely read on mount or query execution)
+        window.dispatchEvent(new Event('optimization-changed'));
+    }, [isOptimized]);
+
     return (
         <div className="min-h-screen bg-interbank-gray">
             <Navbar />
             <div className="container mx-auto px-6 py-12 flex flex-col items-center">
-                <h1 className="text-4xl font-bold text-interbank-blue mb-8">Bienvenido a Interbank</h1>
+                <h1 className="text-4xl font-bold text-interbank-blue mb-4">Bienvenido a Interbank</h1>
+
+                <div className="flex items-center space-x-3 mb-8 bg-white p-3 rounded-full shadow-sm">
+                    <span className={`text-sm font-medium ${!isOptimized ? 'text-interbank-blue font-bold' : 'text-gray-500'}`}>
+                        Consultas Normales
+                    </span>
+                    <button
+                        onClick={() => setIsOptimized(!isOptimized)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-interbank-green focus:ring-offset-2 ${isOptimized ? 'bg-interbank-green' : 'bg-gray-200'}`}
+                    >
+                        <span className="sr-only">Activar consultas optimizadas</span>
+                        <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isOptimized ? 'translate-x-6' : 'translate-x-1'}`}
+                        />
+                    </button>
+                    <span className={`text-sm font-medium ${isOptimized ? 'text-interbank-green font-bold' : 'text-gray-500'}`}>
+                        Consultas Optimizadas
+                    </span>
+                </div>
 
                 <div className="grid md:grid-cols-2 gap-8 w-full max-w-4xl">
                     <Card className="flex flex-col items-center text-center hover:shadow-xl transition-shadow cursor-pointer">

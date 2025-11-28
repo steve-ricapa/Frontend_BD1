@@ -10,6 +10,8 @@ import MovimientosCliente from './pages/MovimientosCliente';
 import PrestamosCliente from './pages/PrestamosCliente';
 import NotFound from './pages/NotFound';
 
+import QueryMonitor from './components/QueryMonitor';
+
 function App() {
     return (
         <BrowserRouter>
@@ -24,6 +26,7 @@ function App() {
                 <Route path="/cliente/prestamos" element={<PrestamosCliente />} />
                 <Route path="*" element={<NotFound />} />
             </Routes>
+            <QueryMonitor />
         </BrowserRouter>
     );
 }
